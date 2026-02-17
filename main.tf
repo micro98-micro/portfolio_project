@@ -92,3 +92,48 @@ resource "aws_eip" "portfolio_eip" {
   instance = aws_instance.rhel_web.id
   domain   = "vpc"
 }
+
+
+# 1. Create the S3 Bucket for State Storage
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "ahmed-portfolio-terraform-state" # Use a unique name
+  lifecycle {
+    prevent_destroy = true # Security: Prevents accidental deletion
+  }
+}
+
+# 2. Enable Versioning (So you can roll back if the state breaks)
+resource "aws_s3_bucket_versioning" "enabled" {
+  bucket = aws_s3_bucket.terraform_state.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# 3. Create DynamoDB Table for State Locking
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "terraform-state-locking"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }     
+}
+
+
+output "static_public_ip" {
+description = "The permanent Elastic IP address of the RHEL server"
+value       = aws_eip.portfolio_eip.public_ip
+}
+
+output "ssh_login_command" {
+description = "Copy and paste this command into your terminal to connect"
+value       = "ssh -i portfolio_key.pem ec2-user@${aws_eip.portfolio_eip.public_ip}"
+}
+
+output "rhel_instance_id" {
+description = "The unique AWS ID of your RHEL instance"
+value       = aws_instance.rhel_web.id
+}
