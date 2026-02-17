@@ -1,0 +1,21 @@
+on:
+    push:
+        branches:
+            - main
+            - "release/**"
+        paths:
+            - "src/**"
+
+    pull: 
+        - main
+        - "release/**"       
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+        - name: checkout code
+          uses: actions/checkout@v4.2.2
+
+        - name: run tests
+          run: nmp test  
